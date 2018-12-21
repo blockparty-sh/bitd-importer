@@ -1,0 +1,6 @@
+blockchain-parser==0.1.4
+cashaddress==1.0.5
+plyvel==1.0.4
+pymongo==3.7.2
+python-bitcoinlib==0.5.0
+python-dotenv==0.10.1

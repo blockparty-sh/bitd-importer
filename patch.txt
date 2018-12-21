@@ -1,0 +1,5 @@
+607c607,608
+<                    raise CScriptTruncatedPushDataError('%s: truncated data' % pushdata_type, data)
+---
+>                    # raise CScriptTruncatedPushDataError('%s: truncated data' % pushdata_type, data)
+>                    pass
