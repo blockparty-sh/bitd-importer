@@ -11,13 +11,12 @@ pip install -r requirements.txt
 
 # install blockchain-parser
 
-git pull -X theirs -s subtree https://github.com/alecalve/python-bitcoin-blockchain-parser master
 cd python-bitcoin-blockchain-parser
 python setup.py install
 
 # patch python-bitcoinlib because it will give error for pushdata for some txs
 
-patch venv/lib/python3.5/site-packages/python_bitcoinlib-0.5.0-py3.5.egg/bitcoin/core/script.py patch.txt
+patch venv/lib/python3.5/site-packages/bitcoin/core/script.py
 
 # stop bitcoind at this point, so the lock on leveldb is removed
 
