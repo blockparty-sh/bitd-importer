@@ -3,6 +3,7 @@
 import os 
 import json
 import base64
+import argparse
 import pymongo
 from dotenv import load_dotenv
 from blockchain_parser.blockchain import Blockchain
@@ -15,13 +16,10 @@ load_dotenv()
 blocks_path = os.path.expanduser(os.getenv("BLOCKS_PATH"))
 index_path  = os.path.expanduser(os.getenv("INDEX_PATH"))
 cache_path  = os.path.expanduser(os.getenv("CACHE_PATH"))
-start_block = int(os.getenv("START_BLOCK"))
-end_block   = int(os.getenv("END_BLOCK"))
 
 mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
 db = mongo[os.getenv('MONGO_NAME')]
-db.confirmed.delete_many({}) # clear old data
-
+#db.confirmed.delete_many({}) # clear old data (done in parallel)
 
 blockchain = Blockchain(blocks_path)
 
@@ -32,7 +30,17 @@ except FileNotFoundError:
     print('building cache, this may take a long time')
 
 
-for block in blockchain.get_ordered_blocks(index_path, cache=cache_path, start=start_block, end=end_block):
+parser = argparse.ArgumentParser(description="import transactions to bitdb")
+parser.add_argument("--start-block", type=int, required=True, help="block to start")
+parser.add_argument("--end-block", type=int, required=True, help="block to start")
+args = parser.parse_args()
+
+for block in blockchain.get_ordered_blocks(
+    index=index_path,
+    cache=cache_path,
+    start=args.start_block,
+    end=args.end_block
+):
     #print("height=%d block=%s" % (block.height, block.hash))
     documents = []
     for tx_index, tx in enumerate(block.transactions):
