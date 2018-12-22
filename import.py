@@ -31,10 +31,11 @@ try:
     print('found existing cache')
 except FileNotFoundError:
     print('building cache, this may take a long time')
-    blockchain.get_ordered_blocks(
+    for block in blockchain.get_ordered_blocks(
         index=index_path,
         cache=cache_path,
-    )
+    ):
+        break
 
 total_blocks = args.end_block - args.start_block
 
