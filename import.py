@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
-import os 
-import json
-import base64
-import argparse
+import os
 import pymongo
-from dotenv import load_dotenv
+import subprocess
+import argparse
 from blockchain_parser.blockchain import Blockchain
-from blockchain_parser.address import Address
-from bitcoin.core.script import CScriptOp
-from cashaddress import convert
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -19,7 +15,14 @@ cache_path  = os.path.expanduser(os.getenv("CACHE_PATH"))
 
 mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
 db = mongo[os.getenv('MONGO_NAME')]
-#db.confirmed.delete_many({}) # clear old data (done in parallel)
+db.confirmed.delete_many({}) # clear old data
+
+parser = argparse.ArgumentParser(description="import transactions to bitdb")
+parser.add_argument("--start-block", type=int, required=True, help="block to start")
+parser.add_argument("--end-block", type=int, required=True, help="block to start")
+parser.add_argument("--par", type=int, required=True, help="amount of processes to divide load between")
+args = parser.parse_args()
+
 
 blockchain = Blockchain(blocks_path)
 
@@ -28,101 +31,28 @@ try:
     print('found existing cache')
 except FileNotFoundError:
     print('building cache, this may take a long time')
+    blockchain.get_ordered_blocks(
+        index=index_path,
+        cache=cache_path,
+    )
 
+total_blocks = args.end_block - args.start_block
 
-parser = argparse.ArgumentParser(description="import transactions to bitdb")
-parser.add_argument("--start-block", type=int, required=True, help="block to start")
-parser.add_argument("--end-block", type=int, required=True, help="block to start")
-args = parser.parse_args()
+brange = []
+for i in range(args.par):
+    brange.append((
+        (args.start_block + ((total_blocks // args.par) * i)),
+        (args.start_block + ((total_blocks // args.par) * (i+1)))
+    ))
+brange[-1] = (brange[-1][0], args.end_block) # fix for last block inclusive
 
-for block in blockchain.get_ordered_blocks(
-    index=index_path,
-    cache=cache_path,
-    start=args.start_block,
-    end=args.end_block
-):
-    #print("height=%d block=%s" % (block.height, block.hash))
-    documents = []
-    for tx_index, tx in enumerate(block.transactions):
-        #print("tx: ", tx)
-        #print(tx_index)
-        inputs = []
-        outputs = []
+procs = []
+for m in brange:
+    procs.append(subprocess.Popen([
+        "python", "import-block-range-from-leveldb.py",
+        "--start-block", str(m[0]),
+        "--end-block", str(m[1])
+    ]))
 
-        for input_index, item in enumerate(tx.inputs):
-            xput = { "i": input_index }
-
-            if not tx.is_coinbase(): # coinbase input doesnt have to be valid script
-                for chunk_index, chunk in enumerate(item.script.operations):
-                    if isinstance(chunk, bytes):
-                        xput["b" + str(chunk_index)] = base64.b64encode(chunk).decode("utf-8")
-                        xput["h" + str(chunk_index)] = chunk.hex()
-                    elif isinstance(chunk, CScriptOp):
-                        xput["b" + str(chunk_index)] = { "op": int(chunk) }
-                    else:
-                        xput["b" + str(chunk_index)] = chunk
-
-            xput["str"] = item.script.value
-            sender = {
-                "h": item.transaction_hash,
-                "i": item.transaction_index,
-            }
-
-            addr = None
-
-            # TODO add additional address types
-            if not tx.is_coinbase():
-                if len(item.script.operations) == 2: # p2pk
-                    if len(item.script.operations[1]) == 33:
-                        addr = Address.from_public_key(item.script.operations[1]).address
-
-            if addr is not None:
-                sender['a'] = convert.to_cash_address(addr)[12:] # remove "bitcoincash:" prefix
-
-            xput["e"] = sender
-            inputs.append(xput)
-
-        for output_index, item in enumerate(tx.outputs):
-            xput = { "i": output_index }
-
-            for chunk_index, chunk in enumerate(item.script.operations):
-                if isinstance(chunk, bytes):
-                    xput["b" + str(chunk_index)] = base64.b64encode(chunk).decode("utf-8")
-                    try:
-                        xput["s" + str(chunk_index)] = chunk.decode("utf-8")
-                    except UnicodeDecodeError:
-                        pass
-                    xput["h" + str(chunk_index)] = chunk.hex()
-                elif isinstance(chunk, CScriptOp):
-                    xput["b" + str(chunk_index)] = { "op": int(chunk) }
-                else:
-                    xput["b" + str(chunk_index)] = chunk
-
-            xput["str"] = item.script.value
-
-            receiver = {
-                "v": item.value,
-                "i": output_index
-            }
-            # bitdb only supports single address, so we will too
-            addresses = [str(m.address) for m in item.addresses]
-            if len(addresses) == 1:
-                receiver["a"] = convert.to_cash_address(addresses[0])[12:] # remove "bitcoincash:" prefix
-            xput["e"] = receiver
-
-            outputs.append(xput)
-
-
-        d = {
-            "tx": { "h": tx.hash },
-            "in": inputs,
-            "out": outputs,
-            "blk": {
-                "i": block.height,
-                "h": block.hash,
-                "t": block.header.timestamp.strftime("%s")
-            }
-        }
-        documents.append(d)
-        #print(json.dumps(d, indent=4))
-    print("height=%d inserted=%i" % (block.height, len(db.confirmed.insert_many(documents).inserted_ids)))
+for p in procs:
+    p.wait()
