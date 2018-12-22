@@ -73,8 +73,9 @@ for block in blockchain.get_ordered_blocks(
             # TODO add additional address types
             if not tx.is_coinbase():
                 if len(item.script.operations) == 2: # p2pk
-                    if len(item.script.operations[1]) == 33:
-                        addr = Address.from_public_key(item.script.operations[1]).address
+                    if isinstance(item.script.operations[1], str): # could be CScriptOp in rare case
+                        if len(item.script.operations[1]) == 33:
+                            addr = Address.from_public_key(item.script.operations[1]).address
 
             if addr is not None:
                 sender['a'] = convert.to_cash_address(addr)[12:] # remove "bitcoincash:" prefix
