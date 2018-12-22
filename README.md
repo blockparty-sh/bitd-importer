@@ -29,4 +29,4 @@ vim .env
 
 # run import (make sure mongodb is running)
 
-python import.py
+python import.py --start-block 558000 --end-block 559000 --par 4
