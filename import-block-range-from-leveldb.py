@@ -126,4 +126,8 @@ for block in blockchain.get_ordered_blocks(
         }
         documents.append(d)
         #print(json.dumps(d, indent=4))
-    print("height=%d inserted=%i" % (block.height, len(db.confirmed.insert_many(documents).inserted_ids)))
+    print("{}%\theight={} inserted={}".format(
+        round((block.height-args.start_block) / (args.end_block-args.start_block) * 100, 2),
+        block.height,
+        len(db.confirmed.insert_many(documents).inserted_ids))
+    )
