@@ -13,15 +13,15 @@ blocks_path = os.path.expanduser(os.getenv("BLOCKS_PATH"))
 index_path  = os.path.expanduser(os.getenv("INDEX_PATH"))
 cache_path  = os.path.expanduser(os.getenv("CACHE_PATH"))
 
-mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
-db = mongo[os.getenv('MONGO_NAME')]
-db.confirmed.delete_many({}) # clear old data
-
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--start-block", type=int, required=True, help="block to start")
 parser.add_argument("--end-block", type=int, required=True, help="block to start")
 parser.add_argument("--par", type=int, required=True, help="amount of processes to divide load between")
 args = parser.parse_args()
+
+mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
+db = mongo[os.getenv('MONGO_NAME')]
+db.confirmed.delete_many({}) # clear old data
 
 
 blockchain = Blockchain(blocks_path)

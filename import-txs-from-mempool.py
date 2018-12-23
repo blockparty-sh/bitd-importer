@@ -15,9 +15,6 @@ load_dotenv()
 
 btc_conf_file = os.path.expanduser(os.getenv("BTC_CONF_FILE"))
 
-mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
-db = mongo[os.getenv('MONGO_NAME')]
-#db.confirmed.delete_many({}) # clear old data (done in parallel)
 
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--dry", action="store_true", help="dry run (no inserts)")
@@ -25,6 +22,11 @@ parser.add_argument("--verbose", action="store_true", help="show json from tna")
 args = parser.parse_args()
 
 rpc = bitcoin.rpc.RawProxy(btc_conf_file=btc_conf_file)
+
+mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
+db = mongo[os.getenv('MONGO_NAME')]
+if not args.dry:
+    db.unconfirmed.delete_many({}) # clear old data (done in parallel)
 
 documents = []
 transactions = rpc.getrawmempooltxs()
