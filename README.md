@@ -18,6 +18,14 @@ python setup.py install
 
 patch venv/lib/python3.5/site-packages/bitcoin/core/script.py
 
+# patch bitcoin-abc to add fast mempool transanction rpc
+
+(do this from bitcoin-abc directory)
+
+git am < 0001-Add-new-RPC-call-getrawmempooltxs.patch
+make
+(make install?)
+
 # edit bitcoin configuration
 
 vim ~/.bitcoin/bitcoin.conf
