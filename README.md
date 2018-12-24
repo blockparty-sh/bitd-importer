@@ -16,7 +16,7 @@ python setup.py install
 
 # patch python-bitcoinlib because it will give error for pushdata for some txs
 
-patch venv/lib/python3.5/site-packages/bitcoin/core/script.py
+patch venv/lib/python3.5/site-packages/bitcoin/core/script.py patch.txt
 
 # patch bitcoin-abc to add fast mempool transanction rpc
 
