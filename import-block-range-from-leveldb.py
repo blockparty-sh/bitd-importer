@@ -7,6 +7,7 @@ import json
 from dotenv import load_dotenv
 from blockchain_parser.blockchain import Blockchain
 import tna
+import util
 
 
 load_dotenv()
@@ -17,23 +18,20 @@ cache_path  = os.path.expanduser(os.getenv("CACHE_PATH"))
 
 mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
 db = mongo[os.getenv('MONGO_NAME')]
-#db.confirmed.delete_many({}) # clear old data (done in parallel)
-
-blockchain = Blockchain(blocks_path)
-
-try:
-    open(cache_path, 'r')
-    print('found existing cache')
-except FileNotFoundError:
-    print('building cache, this may take a long time')
 
 
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--start-block", type=int, required=True, help="block to start")
-parser.add_argument("--end-block", type=int, required=True, help="block to start")
+parser.add_argument("--end-block", type=int, help="block to finish on, if not given will get last one in index cache")
 parser.add_argument("--dry", action="store_true", help="dry run (no inserts)")
 parser.add_argument("--verbose", action="store_true", help="show json from tna")
 args = parser.parse_args()
+
+blockchain = Blockchain(blocks_path)
+util.build_index_cache(index_path, cache_path, blockchain)
+
+if not args.end_block:
+    args.end_block = util.count_leveldb_last_block(index_path, cache_path, start_block, blockchain)
 
 for block in blockchain.get_ordered_blocks(
     index=index_path,

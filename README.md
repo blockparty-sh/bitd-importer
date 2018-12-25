@@ -1,6 +1,6 @@
 # install system deps
 
-sudo apt-get install libleveldb-dev
+sudo apt-get install libleveldb-dev screen
 
 # setup virtualenv and install python deps
 
@@ -48,8 +48,16 @@ vim .env
 set values to match bitcoin configuration
 
 # stop bitcoind at this point, so the lock on leveldb is removed
-
 bitcoin-cli stop
-# run import (make sure mongodb is running)
+# this will import from leveldb and in parallel
+# only run this once, the start_bitd.sh script will keep you updated
+python import.py --start-block 558000 --par 4
+# start bitcoin again
+bitcoind -daemon
+# this will run the rpc, mempool, and zmq scripts
+# it is recommended to add this to start running after bitcoind
+# starts on your machine
+bash start_bitd.sh 
 
-python import.py --start-block 558000 --end-block 559000 --par 4
+# open screen to see status of zmq listener
+screen -r bitd-importer

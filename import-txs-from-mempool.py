@@ -25,8 +25,11 @@ rpc = bitcoin.rpc.RawProxy(btc_conf_file=btc_conf_file)
 
 mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
 db = mongo[os.getenv('MONGO_NAME')]
+
 if not args.dry:
-    db.unconfirmed.delete_many({}) # clear old data (done in parallel)
+    print('deleted {} txs from unconfirmed'.format(
+        db.unconfirmed.delete_many({}).deleted_count
+    ))
 
 documents = []
 transactions = rpc.getrawmempooltxs()
@@ -45,5 +48,5 @@ for txdata_index, txdata in enumerate(transactions):
     ))
 
 if not args.dry:
-    inserted = len(db.confirmed.insert_many(documents).inserted_ids)
+    inserted = len(db.unconfirmed.insert_many(documents).inserted_ids)
     print("inserted={}".format(inserted))

@@ -74,6 +74,7 @@ class ZMQHandler():
                     block.height,
                     len(db.confirmed.insert_many(documents).inserted_ids)
                 ))
+                db.meta.update({'column': 'last_block'}, {"height": block.height}, upsert=True)
 
                 for txid in d_txids:
                     db.unconfirmed.delete_one({
