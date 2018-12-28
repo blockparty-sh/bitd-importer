@@ -27,29 +27,30 @@ mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
 db = mongo[os.getenv('MONGO_NAME')]
 
 last_block_height = util.meta_get_last_block_height(db)
-if not args.dry:
-    if last_block_height is not None:
-        if args.start_block < last_block_height:
-            print('start_block is smaller than last block height in db')
-            print("this means you are rescanning parts of the blockchain you've already scanned")
-            print("the entries will be deleted, and this is safe, it just might take longer")
+if last_block_height is not None:
+    if not args.dry:
+        if last_block_height is not None:
+            if args.start_block < last_block_height:
+                print('start_block is smaller than last block height in db')
+                print("this means you are rescanning parts of the blockchain you've already scanned")
+                print("the entries will be deleted, and this is safe, it just might take longer")
+                if input("press enter to continue, anything else to exit: ") != "":
+                    sys.exit()
+
+        if args.start_block-1 > last_block_height:
+            print("start_block-1 is greater than last block height in db ({})".format(last_block_height))
+            print("this might mean you are skipping blocks")
             if input("press enter to continue, anything else to exit: ") != "":
                 sys.exit()
 
-    if args.start_block-1 > last_block_height:
-        print("start_block-1 is greater than last block height in db ({})".format(last_block_height))
-        print("this might mean you are skipping blocks")
-        if input("press enter to continue, anything else to exit: ") != "":
-            sys.exit()
 
-
-    print('deleted {} txs from gte block {}'.format(
-        util.delete_txs_gte(db, args.start_block),
-        args.start_block
-    ))
-    print('deleted {} unconfirmed txs'.format(
-        db.unconfirmed.delete_many({}).deleted_count
-    ))
+        print('deleted {} txs from gte block {}'.format(
+            util.delete_txs_gte(db, args.start_block),
+            args.start_block
+        ))
+        print('deleted {} unconfirmed txs'.format(
+            db.unconfirmed.delete_many({}).deleted_count
+        ))
 
 
 blockchain = Blockchain(blocks_path)
