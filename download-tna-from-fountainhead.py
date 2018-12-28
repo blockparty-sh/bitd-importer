@@ -5,10 +5,12 @@ import requests
 
 parser = argparse.ArgumentParser(description="grab tna/tx from fountainhead")
 parser.add_argument("--txid", type=str, required=True, help="txid to grab")
+parser.add_argument("--prefix", type=str, default="https://bitdb.fountainhead.cash/q/", help="url to prefix to query")
 args = parser.parse_args()
 
 
-url = "https://bitdb.fountainhead.cash/q/{}".format(
+url = "{}{}".format(
+    args.prefix,
     base64.b64encode(json.dumps({
         "v": 3,
         "q": {
