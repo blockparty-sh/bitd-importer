@@ -37,7 +37,7 @@ def extract(block, tx):
             if len(item.script.operations) == 2: # p2pk
                 a = item.script.operations[1]
                 if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
-                    if len(a) == 33:
+                    if len(a) == 33 or len(a) == 65:
                         addr = Address.from_public_key(a).address
 
         if addr is not None:
