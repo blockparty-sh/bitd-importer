@@ -1,4 +1,5 @@
 import base64
+from datetime import timezone
 from cashaddress import convert
 from bitcoin.core.script import CScriptOp
 from blockchain_parser.address import Address
@@ -83,6 +84,6 @@ def extract(block, tx):
         d['blk'] = {
             "i": block.height,
             "h": block.hash,
-            "t": block.header.timestamp.strftime("%s")
+            "t": int(block.header.timestamp.replace(tzinfo=timezone.utc).timestamp())
         }
     return d
