@@ -4,6 +4,9 @@ from cashaddress import convert
 from bitcoin.core.script import CScriptOp
 from blockchain_parser.address import Address
 
+def to_cash_addr(addr):
+    return convert.to_cash_address(addr)[12:] # remove "bitcoincash:" prefix
+
 def extract(block, tx):
     inputs = []
     outputs = []
@@ -38,7 +41,7 @@ def extract(block, tx):
                         addr = Address.from_public_key(a).address
 
         if addr is not None:
-            sender['a'] = convert.to_cash_address(addr)[12:] # remove "bitcoincash:" prefix
+            sender['a'] = to_cash_addr(addr)
 
         xput["e"] = sender
         inputs.append(xput)
@@ -68,7 +71,7 @@ def extract(block, tx):
         # bitdb only supports single address, so we will too
         addresses = [str(m.address) for m in item.addresses]
         if len(addresses) == 1:
-            receiver["a"] = convert.to_cash_address(addresses[0])[12:] # remove "bitcoincash:" prefix
+            receiver["a"] = to_cash_addr(addresses[0])
         xput["e"] = receiver
 
         outputs.append(xput)
