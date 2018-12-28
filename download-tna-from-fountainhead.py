@@ -23,5 +23,6 @@ url = "{}{}".format(
 r = requests.get(url)
 res = r.content
 parsed = json.loads(res.decode('utf-8'))
+del parsed["c"][0]['_id']
 
 print(json.dumps(parsed["c"][0], sort_keys=True, indent=4))
