@@ -3,6 +3,8 @@ from datetime import timezone
 from cashaddress import convert
 from bitcoin.core.script import CScriptOp
 from blockchain_parser.address import Address
+from blockchain_parser.utils import btc_ripemd160, double_sha256
+from bitcoin import base58
 
 def to_cash_addr(addr):
     return convert.to_cash_address(addr)[12:] # remove "bitcoincash:" prefix
@@ -34,14 +36,23 @@ def extract(block, tx):
 
         # TODO add additional address types
         if not tx.is_coinbase():
-            if len(item.script.operations) == 2: # p2pk
+            if len(item.script.operations) == 2: # p2pk / p2pkh
                 a = item.script.operations[1]
                 if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
                     if len(a) == 33 or len(a) == 65:
                         addr = Address.from_public_key(a).address
 
+            if addr is None: # p2sh
+                version = b'\x05'
+                hash160 = btc_ripemd160(item.script.operations[-1])
+                checksum = double_sha256(version + hash160)
+                addr = base58.encode(version + hash160 + checksum[:4])
+
         if addr is not None:
-            sender['a'] = to_cash_addr(addr)
+            try:
+                sender['a'] = to_cash_addr(addr)
+            except:
+                pass
 
         xput["e"] = sender
         inputs.append(xput)
