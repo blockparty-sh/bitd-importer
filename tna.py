@@ -19,12 +19,20 @@ def extract(block, tx):
         if not tx.is_coinbase(): # coinbase input doesnt have to be valid script
             for chunk_index, chunk in enumerate(item.script.operations):
                 if isinstance(chunk, bytes):
-                    xput["b" + str(chunk_index)] = base64.b64encode(chunk).decode("utf-8")
-                    xput["h" + str(chunk_index)] = chunk.hex()
+                    op_b = base64.b64encode(chunk).decode("utf-8")
+
+                    if op_b == '': # TODO: special case to match bitd (investigate bitcoinlib)
+                        xput["b" + str(chunk_index)] = { "op": 0 }
+                    else:
+                        xput["b" + str(chunk_index)] = op_b
+                        xput["h" + str(chunk_index)] = chunk.hex()
                 elif isinstance(chunk, CScriptOp):
                     xput["b" + str(chunk_index)] = { "op": int(chunk) }
                 else:
-                    xput["b" + str(chunk_index)] = chunk
+                    if chunk == 1: # TODO: special case to match bitd (investigate bitcoinlib)
+                        xput["b" + str(chunk_index)] = { "op": 81 }
+                    else:
+                        xput["b" + str(chunk_index)] = chunk
 
         xput["str"] = item.script.value
         sender = {
