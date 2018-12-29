@@ -43,16 +43,22 @@ def extract(block, tx):
             addr = None
 
             if len(item.script.operations) == 2: # p2pk / p2pkh
-                a = item.script.operations[1]
-                if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
-                    if len(a) == 33 or len(a) == 65:
-                        addr = Address.from_public_key(a).address
+                try:
+                    a = item.script.operations[1]
+                    if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
+                        if len(a) == 33 or len(a) == 65:
+                            addr = Address.from_public_key(a).address
+                except:
+                    addr = None
 
             if addr is None: # p2sh
-                version = b'\x05'
-                hash160 = btc_ripemd160(item.script.operations[-1])
-                checksum = double_sha256(version + hash160)
-                addr = base58.encode(version + hash160 + checksum[:4])
+                try:
+                   version = b'\x05'
+                   hash160 = btc_ripemd160(item.script.operations[-1])
+                   checksum = double_sha256(version + hash160)
+                   addr = base58.encode(version + hash160 + checksum[:4])
+                except:
+                    addr = None
 
             if addr is not None:
                 try:
