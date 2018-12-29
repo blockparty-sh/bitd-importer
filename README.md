@@ -49,6 +49,8 @@ set values to match bitcoin configuration
 
 # stop bitcoind at this point, so the lock on leveldb is removed
 bitcoin-cli stop
+# create the indexes for mongodb collections
+python create-indexes.py
 # this will import from leveldb and in parallel
 # only run this once, the start_bitd.sh script will keep you updated
 python import.py --start-block 558000 --par 4
