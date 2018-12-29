@@ -42,7 +42,6 @@ def extract(block, tx):
 
             addr = None
 
-            # TODO add additional address types
             if len(item.script.operations) == 2: # p2pk / p2pkh
                 a = item.script.operations[1]
                 if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
