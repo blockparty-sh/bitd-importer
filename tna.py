@@ -13,10 +13,10 @@ def extract(block, tx):
     inputs = []
     outputs = []
 
-    for input_index, item in enumerate(tx.inputs):
-        xput = { "i": input_index }
+    if not tx.is_coinbase():
+        for input_index, item in enumerate(tx.inputs):
+            xput = { "i": input_index }
 
-        if not tx.is_coinbase(): # coinbase input doesnt have to be valid script
             for chunk_index, chunk in enumerate(item.script.operations):
                 if isinstance(chunk, bytes):
                     op_b = base64.b64encode(chunk).decode("utf-8")
@@ -34,16 +34,15 @@ def extract(block, tx):
                     else:
                         xput["b" + str(chunk_index)] = chunk
 
-        xput["str"] = item.script.value
-        sender = {
-            "h": item.transaction_hash,
-            "i": item.transaction_index,
-        }
+            xput["str"] = item.script.value
+            sender = {
+                "h": item.transaction_hash,
+                "i": item.transaction_index,
+            }
 
-        addr = None
+            addr = None
 
-        # TODO add additional address types
-        if not tx.is_coinbase():
+            # TODO add additional address types
             if len(item.script.operations) == 2: # p2pk / p2pkh
                 a = item.script.operations[1]
                 if isinstance(a, str) or isinstance(a, bytes): # could be CScriptOp in rare case
@@ -56,14 +55,14 @@ def extract(block, tx):
                 checksum = double_sha256(version + hash160)
                 addr = base58.encode(version + hash160 + checksum[:4])
 
-        if addr is not None:
-            try:
-                sender['a'] = to_cash_addr(addr)
-            except:
-                pass
+            if addr is not None:
+                try:
+                    sender['a'] = to_cash_addr(addr)
+                except:
+                    pass
 
-        xput["e"] = sender
-        inputs.append(xput)
+            xput["e"] = sender
+            inputs.append(xput)
 
     for output_index, item in enumerate(tx.outputs):
         xput = { "i": output_index }
