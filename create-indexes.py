@@ -39,18 +39,18 @@ def add_indexes_to_collection(collection):
 
     for i in range(0, 16):
         print('adding in.h1', i)
-        collection.create_index("in.h1")
+        collection.create_index("in.h"+str(i))
         print('adding in.b1', i)
-        collection.create_index("in.b1")
+        collection.create_index("in.b"+str(i))
 
         print('adding out.s1', i)
-        collection.create_index("out.s1")
+        collection.create_index("out.s"+str(i))
         print('adding out.s1 (FULLTEXT)', i)
-        collection.create_index([("out.s1", pymongo.TEXT)])
+        collection.create_index([("out.s"+str(i), pymongo.TEXT)])
         print('adding out.h1', i)
-        collection.create_index("out.h1")
+        collection.create_index("out.h"+str(i))
         print('adding out.b1', i)
-        collection.create_index("out.b1")
+        collection.create_index("out.b"+str(i))
 
 print('CONFIRMED')
 add_indexes_to_collection(db.confirmed)
