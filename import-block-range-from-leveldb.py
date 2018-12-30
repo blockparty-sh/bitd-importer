@@ -2,8 +2,9 @@
 
 import os 
 import argparse
-import pymongo
 import json
+import psycopg2
+from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 from blockchain_parser.blockchain import Blockchain
 import tna
@@ -16,14 +17,16 @@ blocks_path = os.path.expanduser(os.getenv("BLOCKS_PATH"))
 index_path  = os.path.expanduser(os.getenv("INDEX_PATH"))
 cache_path  = os.path.expanduser(os.getenv("CACHE_PATH"))
 
-mongo = pymongo.MongoClient(os.getenv('MONGO_URL'))
-db = mongo[os.getenv('MONGO_NAME')]
+conn = psycopg2.connect(user=os.getenv("POSTGRES_USER"),
+                        password=os.getenv("POSTGRES_PASSWORD"),
+                        database=os.getenv("POSTGRES_DB"))
+cur = conn.cursor()
 
 
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--start-block", type=int, required=True, help="block to start")
 parser.add_argument("--end-block", type=int, help="block to finish on, if not given will get last one in index cache")
-parser.add_argument("--bulk-amount", type=int, default=25000, help="how many documents to process before doing insert")
+parser.add_argument("--bulk-amount", type=int, default=10000, help="how many documents to process before doing insert")
 parser.add_argument("--dry", action="store_true", help="dry run (no inserts)")
 parser.add_argument("--verbose", action="store_true", help="show json from tna")
 args = parser.parse_args()
@@ -54,12 +57,15 @@ for block in blockchain.get_ordered_blocks(
         documents.append(res)
 
         if not args.dry and len(documents) >= args.bulk_amount:
-            inserted = len(db.confirmed.insert_many(documents).inserted_ids)
+            util.insert_documents(cur, documents)
             documents = []
-            print("inserted {} documents".format(inserted))
 
 
 # insert remaining documents
 if not args.dry:
-    inserted = len(db.confirmed.insert_many(documents).inserted_ids)
-    print("inserted {} documents".format(inserted))
+    util.insert_documents(cur, documents)
+    documents = []
+
+conn.commit()
+cur.close()
+conn.close()

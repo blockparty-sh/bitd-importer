@@ -5,7 +5,7 @@ BEGIN;
 
 CREATE TABLE bitdb.blocks (
     height      INTEGER         PRIMARY KEY,
-    hash        VARCHAR(32)     NOT NULL,
+    hash        VARCHAR(64)     NOT NULL,
     timestamp   INTEGER         NOT NULL
 );
 

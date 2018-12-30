@@ -16,24 +16,26 @@ def extract(block, tx):
     if not tx.is_coinbase():
         for input_index, item in enumerate(tx.inputs):
             xput = { "i": input_index }
+            tnaput = {}
 
             for chunk_index, chunk in enumerate(item.script.operations):
                 if isinstance(chunk, bytes):
                     op_b = base64.b64encode(chunk).decode("utf-8")
 
                     if op_b == '': # TODO: special case to match bitd (investigate bitcoinlib)
-                        xput["b" + str(chunk_index)] = { "op": 0 }
+                        tnaput["b" + str(chunk_index)] = { "op": 0 }
                     else:
-                        xput["b" + str(chunk_index)] = op_b
-                        xput["h" + str(chunk_index)] = chunk.hex()
+                        tnaput["b" + str(chunk_index)] = op_b
+                        tnaput["h" + str(chunk_index)] = chunk.hex()
                 elif isinstance(chunk, CScriptOp):
-                    xput["b" + str(chunk_index)] = { "op": int(chunk) }
+                    tnaput["b" + str(chunk_index)] = { "op": int(chunk) }
                 else:
                     if chunk == 1: # TODO: special case to match bitd (investigate bitcoinlib)
-                        xput["b" + str(chunk_index)] = { "op": 81 }
+                        tnaput["b" + str(chunk_index)] = { "op": 81 }
                     else:
-                        xput["b" + str(chunk_index)] = chunk
+                        tnaput["b" + str(chunk_index)] = chunk
 
+            xput['tna'] = tnaput
             xput["str"] = item.script.value
             sender = {
                 "h": item.transaction_hash,
@@ -64,6 +66,7 @@ def extract(block, tx):
                 try:
                     sender['a'] = to_cash_addr(addr)
                 except:
+                    sender['a'] = None
                     pass
 
             xput["e"] = sender
@@ -71,20 +74,22 @@ def extract(block, tx):
 
     for output_index, item in enumerate(tx.outputs):
         xput = { "i": output_index }
+        tnaput = {}
 
         for chunk_index, chunk in enumerate(item.script.operations):
             if isinstance(chunk, bytes):
-                xput["b" + str(chunk_index)] = base64.b64encode(chunk).decode("utf-8")
+                tnaput["b" + str(chunk_index)] = base64.b64encode(chunk).decode("utf-8")
                 try:
-                    xput["s" + str(chunk_index)] = chunk.decode("utf-8")
+                    tnaput["s" + str(chunk_index)] = chunk.decode("utf-8").replace('\u0000', '')
                 except UnicodeDecodeError:
                     pass
-                xput["h" + str(chunk_index)] = chunk.hex()
+                tnaput["h" + str(chunk_index)] = chunk.hex()
             elif isinstance(chunk, CScriptOp):
-                xput["b" + str(chunk_index)] = { "op": int(chunk) }
+                tnaput["b" + str(chunk_index)] = { "op": int(chunk) }
             else:
-                xput["b" + str(chunk_index)] = chunk
+                tnaput["b" + str(chunk_index)] = chunk
 
+        xput['tna'] = tnaput
         xput["str"] = item.script.value
 
         receiver = {
@@ -95,6 +100,9 @@ def extract(block, tx):
         addresses = [str(m.address) for m in item.addresses]
         if len(addresses) == 1:
             receiver["a"] = to_cash_addr(addresses[0])
+        else:
+            receiver["a"] = None
+
         xput["e"] = receiver
 
         outputs.append(xput)

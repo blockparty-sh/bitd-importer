@@ -1,4 +1,7 @@
 import sys
+import psycopg2
+from psycopg2.extras import execute_values
+from psycopg2.extras import Json
 
 # this is for python-bitcoin-blockchain-parser to read blocks faster
 def build_index_cache(index_path, cache_path, blockchain):
@@ -62,3 +65,25 @@ def delete_txs_gte(db, height):
         }
     }).deleted_count
 
+def insert_documents(cur, documents):
+    txs_q  = 'INSERT INTO bitdb.txs (txid, refhash, refheight) VALUES %s'
+    vin_q  = 'INSERT INTO bitdb.vin (reftxid, refheight, txid, vout, sender, tna) VALUES %s'
+    vout_q = 'INSERT INTO bitdb.vout (reftxid, refheight, n, satoshis, receiver, tna) VALUES %s'
+
+    txs_b  = []
+    vin_b  = []
+    vout_b = []
+
+    for d in documents:
+        txs_b.append((d['tx']['h'], d['blk']['h'], d['blk']['i']))
+        for i in d['in']:
+            vin_b.append((d['tx']['h'], d['blk']['i'], i['e']['h'], i['e']['i'], i['e']['a'], Json(i['tna'])))
+        for i in d['out']:
+            vout_b.append((d['tx']['h'], d['blk']['i'], i['e']['i'], i['e']['v'], i['e']['a'], Json(i['tna'])))
+
+
+    execute_values(cur, txs_q, txs_b)
+    execute_values(cur, vin_q, vin_b)
+    execute_values(cur, vout_q, vout_b)
+
+    print("inserted {} documents".format(len(documents)))
