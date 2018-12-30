@@ -3,3 +3,4 @@
 
 appschema 2018-12-30T02:03:51Z friedoranges,,, <pizzapi@friedoranges> # Add schema
 txs [appschema] 2018-12-30T02:33:11Z blockparty <hello@blockparty.sh> # transactions table
+blocks [appschema] 2018-12-30T03:18:56Z blockparty <hello@blockparty.sh> # blocks table
