@@ -66,16 +66,16 @@ def delete_txs_gte(db, height):
     }).deleted_count
 
 def insert_documents(cur, documents):
-    txs_q  = 'INSERT INTO bitdb.txs (txid, refhash, refheight) VALUES %s'
-    vin_q  = 'INSERT INTO bitdb.vin (reftxid, refheight, txid, vout, sender, tna) VALUES %s'
-    vout_q = 'INSERT INTO bitdb.vout (reftxid, refheight, n, satoshis, receiver, tna) VALUES %s'
+    txs_q  = 'INSERT INTO bitdb.txs (txid, height, blockhash) VALUES %s'
+    vin_q  = 'INSERT INTO bitdb.vin (txid, height, prevout_txid, prevout_vout, sender, tna) VALUES %s'
+    vout_q = 'INSERT INTO bitdb.vout (txid, height, n, satoshis, receiver, tna) VALUES %s'
 
     txs_b  = []
     vin_b  = []
     vout_b = []
 
     for d in documents:
-        txs_b.append((d['tx']['h'], d['blk']['h'], d['blk']['i']))
+        txs_b.append((d['tx']['h'], d['blk']['i'], d['blk']['h']))
         for i in d['in']:
             vin_b.append((d['tx']['h'], d['blk']['i'], i['e']['h'], i['e']['i'], i['e']['a'], Json(i['tna'])))
         for i in d['out']:

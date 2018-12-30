@@ -35,7 +35,7 @@ blockchain = Blockchain(blocks_path)
 util.build_index_cache(index_path, cache_path, blockchain)
 
 if not args.end_block:
-    args.end_block = util.count_leveldb_last_block(index_path, cache_path, start_block, blockchain)
+    args.end_block = util.count_leveldb_last_block(index_path, cache_path, args.start_block, blockchain)
 
 documents = []
 for block in blockchain.get_ordered_blocks(
