@@ -23,7 +23,7 @@ db = mongo[os.getenv('MONGO_NAME')]
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--start-block", type=int, required=True, help="block to start")
 parser.add_argument("--end-block", type=int, help="block to finish on, if not given will get last one in index cache")
-parser.add_argument("--bulk-amount", type=int, default=100000, help="how many documents to process before doing insert")
+parser.add_argument("--bulk-amount", type=int, default=25000, help="how many documents to process before doing insert")
 parser.add_argument("--dry", action="store_true", help="dry run (no inserts)")
 parser.add_argument("--verbose", action="store_true", help="show json from tna")
 args = parser.parse_args()
