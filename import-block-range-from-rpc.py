@@ -23,6 +23,7 @@ db = mongo[os.getenv('MONGO_NAME')]
 parser = argparse.ArgumentParser(description="import transactions to bitdb")
 parser.add_argument("--start-block", type=int, help="block to start, if not given will go from db.meta.last_block")
 parser.add_argument("--end-block", type=int, help="block to finish on, if not given will go until rpc fails")
+parser.add_argument("--bulk-amount", type=int, default=10000, help="how many documents to process before doing insert")
 parser.add_argument("--dry", action="store_true", help="dry run (no inserts)")
 parser.add_argument("--verbose", action="store_true", help="show json from tna")
 args = parser.parse_args()
@@ -77,6 +78,12 @@ for height in range(args.start_block, args.end_block):
 
     block = Block(raw_block, height=height)
 
+    print("{}%\theight={} txs={}".format(
+        round((block.height-args.start_block) / (percentage_end_block_count-args.start_block) * 100, 2),
+        block.height,
+        len(block.transactions)
+    ))
+
     documents = []
     for tx in block.transactions:
         res = tna.extract(block, tx)
@@ -84,14 +91,7 @@ for height in range(args.start_block, args.end_block):
             print(json.dumps(res, indent=4))
         documents.append(res)
 
-    if args.dry:
-        inserted = 0
-    else:
-        inserted = len(db.confirmed.insert_many(documents).inserted_ids)
-        util.meta_update_last_block_height(db, height)
+        if not args.dry and len(documents) >= args.bulk_amount:
+            inserted = len(db.confirmed.insert_many(documents).inserted_ids)
+            util.meta_update_last_block_height(db, height)
 
-    print("{}%\theight={} inserted={}".format(
-        round((block.height-args.start_block) / (percentage_end_block_count-args.start_block) * 100, 2),
-        block.height,
-        inserted
-    ))
