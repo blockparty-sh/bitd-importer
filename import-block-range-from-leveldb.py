@@ -41,7 +41,12 @@ for block in blockchain.get_ordered_blocks(
     start=args.start_block,
     end=args.end_block
 ):
-    #print("height=%d block=%s" % (block.height, block.hash))
+    print("{}%\theight={}\ttxs={}".format(
+        round((block.height-args.start_block) / (args.end_block-args.start_block) * 100, 2),
+        block.height,
+        len(block.transactions)
+    ))
+
     for tx in block.transactions:
         res = tna.extract(block, tx)
         if args.verbose:
@@ -53,11 +58,6 @@ for block in blockchain.get_ordered_blocks(
             documents = []
             print("inserted {} documents".format(inserted))
 
-    print("{}%\theight={}\ttxs={}".format(
-        round((block.height-args.start_block) / (args.end_block-args.start_block) * 100, 2),
-        block.height,
-        len(block.transactions)
-    ))
 
 # insert remaining documents
 if not args.dry:
